@@ -1,32 +1,26 @@
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC
-from googlesearch import search  # поиск в Google
-from termcolor import colored  # вывод цветных логов (для выделения распознанной речи)
-from dotenv import load_dotenv  # загрузка информации из .env-файла
-import speech_recognition  # распознавание пользовательской речи (Speech-To-Text)
-import googletrans  # использование системы Google Translate
-import pyttsx3  # синтез речи (Text-To-Speech)
-import random  # генератор случайных чисел
-import webbrowser  # работа с использованием браузера по умолчанию (открывание вкладок с web-страницей)
-import traceback  # вывод traceback без остановки работы программы при отлове исключений
-import json  # работа с json-файлами и json-строками
-import os  # работа с файловой системой
+from googlesearch import search
+from termcolor import colored
+from dotenv import load_dotenv
+import speech_recognition
+import googletrans
+import pyttsx3
+import random
+import webbrowser
+import traceback
+import json
+import os
 
 
 class Translation:
-    """
-    Получение вшитого в приложение перевода строк для создания мультиязычного ассистента
-    """
+
     with open("translations.json", "r", encoding="UTF-8") as file:
         translations = json.load(file)
 
     def get(self, text: str):
-        """
-        Получение перевода строки из файла на нужный язык (по его коду)
-        :param text: текст, который требуется перевести
-        :return: вшитый в приложение перевод текста
-        """
+
         if text in self.translations:
             return self.translations[text][assistant.speech_language]
         else:
@@ -36,9 +30,7 @@ class Translation:
 
 
 class OwnerPerson:
-    """
-    Информация о владельце, включающие имя, город проживания, родной язык речи, изучаемый язык (для переводов текста)
-    """
+
     name = ""
     home_city = ""
     native_language = ""
@@ -46,11 +38,7 @@ class OwnerPerson:
 
 
 class VoiceAssistant:
-    """
-    Настройки голосового ассистента, включающие имя, пол, язык речи
-    Примечание: для мультиязычных голосовых ассистентов лучше создать отдельный класс,
-    который будет брать перевод из JSON-файла с нужным языком
-    """
+
     name = ""
     sex = ""
     speech_language = ""
@@ -58,9 +46,7 @@ class VoiceAssistant:
 
 
 def setup_assistant_voice():
-    """
-    Установка голоса по умолчанию (индекс может меняться в зависимости от настроек операционной системы)
-    """
+
     voices = ttsEngine.getProperty("voices")
 
     if assistant.speech_language == "en":
@@ -78,9 +64,7 @@ def setup_assistant_voice():
 
 
 def record_and_recognize_audio():
-    """
-    Запись и распознавание аудио
-    """
+
     with microphone:
         recognized_data = ""
 
@@ -99,30 +83,24 @@ def record_and_recognize_audio():
             traceback.print_exc()
             return
 
-        # использование online-распознавания через Google (высокое качество распознавания)
         try:
             print("Started recognition...")
             recognized_data = recognizer.recognize_google(audio, language=assistant.recognition_language).lower()
 
         except speech_recognition.UnknownValueError:
-            pass  # play_voice_assistant_speech("What did you say again?")
+            play_voice_assistant_speech("What did you say again?")
 
         return recognized_data
 
 
 def play_voice_assistant_speech(text_to_speech):
-    """
-    Проигрывание речи ответов голосового ассистента (без сохранения аудио)
-    :param text_to_speech: текст, который нужно преобразовать в речь
-    """
+
     ttsEngine.say(str(text_to_speech))
     ttsEngine.runAndWait()
 
 
 def play_failure_phrase():
-    """
-    Проигрывание случайной фразы при неудачном распознавании
-    """
+
     failure_phrases = [
         translator.get("Can you repeat, please?"),
         translator.get("What did you say again?")
@@ -131,9 +109,7 @@ def play_failure_phrase():
 
 
 def play_greetings():
-    """
-    Проигрывание случайной приветственной речи
-    """
+
     greetings = [
         translator.get("Hello, {}! How can I help you today?").format(person.name),
         translator.get("Good day to you {}! How can I help you today?").format(person.name)
@@ -142,9 +118,7 @@ def play_greetings():
 
 
 def play_farewell_and_quit():
-    """
-    Проигрывание прощательной речи и выход
-    """
+
     farewells = [
         translator.get("Goodbye, {}! Have a nice day!").format(person.name),
         translator.get("See you soon, {}!").format(person.name)
@@ -155,33 +129,25 @@ def play_farewell_and_quit():
 
 
 def search_for_term_on_google(*args: tuple):
-    """
-    Поиск в Google с автоматическим открытием ссылок (на список результатов и на сами результаты, если возможно)
-    :param args: фраза поискового запроса
-    """
-    if not args[0]:
-        return
-    search_term = " ".join(args[0])
 
-    # открытие ссылки на поисковик в браузере
+    #if not args[0]:return
+    search_term = " "#.join(args[0])
     url = "https://google.com/search?q=" + search_term
     webbrowser.get().open(url)
 
-    # альтернативный поиск с автоматическим открытием ссылок на результаты (в некоторых случаях может быть небезопасно)
     search_results = []
     try:
-        for _ in search(search_term,  # что искать
-                        tld="com",  # верхнеуровневый домен
-                        lang=assistant.speech_language,  # используется язык, на котором говорит ассистент
-                        num=1,  # количество результатов на странице
-                        start=0,  # индекс первого извлекаемого результата
-                        stop=1,  # индекс последнего извлекаемого результата (я хочу, чтобы открывался первый результат)
-                        pause=1.0,  # задержка между HTTP-запросами
+        for _ in search(search_term,
+                        tld="com",
+                        lang=assistant.speech_language,
+                        num=1,
+                        start=0,
+                        stop=1,
+                        pause=1.0,
                         ):
             search_results.append(_)
             webbrowser.get().open(_)
 
-    # поскольку все ошибки предсказать сложно, то будет произведен отлов с последующим выводом без остановки программы
     except (ValueError, Exception):
         play_voice_assistant_speech(translator.get("Seems like we have a trouble. See logs for more information"))
         traceback.print_exc()
@@ -192,19 +158,14 @@ def search_for_term_on_google(*args: tuple):
 
 
 def get_translation(*args: tuple):
-    """
-    Получение перевода текста с одного языка на другой (в данном случае с изучаемого на родной язык или обратно)
-    :param args: фраза, которую требуется перевести
-    """
-    if not args[0]:
-        return
 
-    search_term = " ".join(args[0])
+    #if not args[0]:return
+
+    search_term = " "#.join(args[0])
     google_translator = googletrans.Translator()
 
     old_assistant_language = assistant.speech_language
     try:
-        # если язык речи ассистента и родной язык пользователя различаются, то перевод выполяется на родной язык
         if assistant.speech_language != person.native_language:
             translation_result = google_translator.translate(search_term,  # что перевести
                                                              src=person.target_language,  # с какого языка
@@ -212,48 +173,38 @@ def get_translation(*args: tuple):
 
             play_voice_assistant_speech("The translation for {} in Russian is".format(search_term))
 
-            # смена голоса ассистента на родной язык пользователя (чтобы можно было произнести перевод)
             assistant.speech_language = person.native_language
             setup_assistant_voice()
 
-        # если язык речи ассистента и родной язык пользователя одинаковы, то перевод выполяется на изучаемый язык
         else:
             translation_result = google_translator.translate(search_term,  # что перевести
                                                              src=person.native_language,  # с какого языка
                                                              dest=person.target_language)  # на какой язык
             play_voice_assistant_speech("По-английски {} будет как".format(search_term))
 
-            # смена голоса ассистента на изучаемый язык пользователя (чтобы можно было произнести перевод)
             assistant.speech_language = person.target_language
             setup_assistant_voice()
 
-        # произнесение перевода
         play_voice_assistant_speech(translation_result.text)
 
-    # поскольку все ошибки предсказать сложно, то будет произведен отлов с последующим выводом без остановки программы
     except (ValueError, Exception):
         play_voice_assistant_speech(translator.get("Seems like we have a trouble. See logs for more information"))
         traceback.print_exc()
 
     finally:
-        # возвращение преждних настроек голоса помощника
         assistant.speech_language = old_assistant_language
         setup_assistant_voice()
 
 
 def change_language():
-    """
-    Изменение языка голосового ассистента (языка распознавания речи)
-    """
-    assistant.speech_language = "en" if assistant.speech_language == "ru" else "ru"
+
+    assistant.speech_language = "ru" if assistant.speech_language == "en" else "en"
     setup_assistant_voice()
     print(colored("Language switched to " + assistant.speech_language, "cyan"))
 
 
 def toss_coin():
-    """
-    "Подбрасывание" монетки для выбора из 2 опций
-    """
+
     flips_count, heads, tails = 3, 0, 0
 
     for flip in range(flips_count):
@@ -265,7 +216,6 @@ def toss_coin():
     play_voice_assistant_speech(translator.get(winner) + " " + translator.get("won"))
 
 
-# перечень команд для использования в виде JSON-объекта
 config = {
     "intents": {
         "greeting": {
@@ -305,9 +255,7 @@ config = {
 
 
 def prepare_corpus():
-    """
-    Подготовка модели для угадывания намерения пользователя
-    """
+
     corpus = []
     target_vector = []
     for intent_name, intent_data in config["intents"].items():
@@ -321,11 +269,7 @@ def prepare_corpus():
 
 
 def get_intent(request):
-    """
-    Получение наиболее вероятного намерения в зависимости от запроса пользователя
-    :param request: запрос пользователя
-    :return: наиболее вероятное намерение
-    """
+
     best_intent = classifier.predict(vectorizer.transform([request]))[0]
 
     index_of_best_intent = list(classifier_probability.classes_).index(best_intent)
@@ -340,42 +284,32 @@ def get_intent(request):
 
 
 def make_preparations():
-    """
-    Подготовка глобальных переменных к запуску приложения
-    """
+
     global recognizer, microphone, ttsEngine, person, assistant, translator, vectorizer, classifier_probability, \
         classifier
 
-    # инициализация инструментов распознавания и ввода речи
     recognizer = speech_recognition.Recognizer()
     microphone = speech_recognition.Microphone()
 
-    # инициализация инструмента синтеза речи
     ttsEngine = pyttsx3.init()
 
-    # настройка данных пользователя
     person = OwnerPerson()
     person.name = "Лена"
     person.home_city = "Белгород"
     person.native_language = "ru"
     person.target_language = "en"
 
-    # настройка данных голосового помощника
     assistant = VoiceAssistant()
-    assistant.name = "Alice"
+    assistant.name = "Ruble"
     assistant.sex = "male"
-    assistant.speech_language = "ru"
+    assistant.speech_language = "en"
 
-    # установка голоса по умолчанию
     setup_assistant_voice()
 
-    # добавление возможностей перевода фраз (из заготовленного файла)
     translator = Translation()
 
-    # загрузка информации из .env-файла (там лежит API-ключ для OpenWeatherMap)
     load_dotenv()
 
-    # подготовка корпуса для распознавания запросов пользователя с некоторой вероятностью (поиск похожих)
     vectorizer = TfidfVectorizer(analyzer="char", ngram_range=(2, 3))
     classifier_probability = LogisticRegression()
     classifier = LinearSVC()
@@ -386,7 +320,7 @@ if __name__ == "__main__":
     make_preparations()
 
     while True:
-        # старт записи речи с последующим выводом распознанной речи и удалением записанного в микрофон аудио
+
         voice_input = record_and_recognize_audio()
 
         if os.path.exists("microphone-results.wav"):
@@ -394,11 +328,9 @@ if __name__ == "__main__":
 
         print(colored(voice_input, "blue"))
 
-        # отделение комманд от дополнительной информации (аргументов)
         if voice_input:
             voice_input_parts = voice_input.split(" ")
 
-            # если было сказано одно слово - выполняем команду сразу без дополнительных аргументов
             if len(voice_input_parts) == 1:
                 intent = get_intent(voice_input)
                 if intent:
@@ -406,8 +338,6 @@ if __name__ == "__main__":
                 else:
                     config["failure_phrases"]()
 
-            # в случае длинной фразы - выполняется поиск ключевой фразы и аргументов через каждое слово,
-            # пока не будет найдено совпадение
             if len(voice_input_parts) > 1:
                 for guess in range(len(voice_input_parts)):
                     intent = get_intent((" ".join(voice_input_parts[0:guess])).strip())
@@ -417,5 +347,5 @@ if __name__ == "__main__":
                         print(command_options)
                         config["intents"][intent]["responses"](*command_options)
                         break
-                    if not intent and guess == len(voice_input_parts)-1:
+                    if not intent and guess == len(voice_input_parts) - 1:
                         config["failure_phrases"]()
