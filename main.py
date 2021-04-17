@@ -1,17 +1,17 @@
-import os  # работа с
-import random  # генератор случайных чисел
-import traceback  # вывод traceback без остановки работы программы при отлове исключений
-import pyttsx3  # синтез речи (Text-To-Speech)
-import speech_recognition  # распознавание пользовательской речи (Speech-To-Text)
-from dotenv import load_dotenv  # загрузка информации из .env-файла
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import LinearSVC
+from googlesearch import search  # поиск в Google
 from termcolor import colored  # вывод цветных логов (для выделения распознанной речи)
-import webbrowser
-from googlesearch import search
-import json
-import googletrans
+from dotenv import load_dotenv  # загрузка информации из .env-файла
+import speech_recognition  # распознавание пользовательской речи (Speech-To-Text)
+import googletrans  # использование системы Google Translate
+import pyttsx3  # синтез речи (Text-To-Speech)
+import random  # генератор случайных чисел
+import webbrowser  # работа с использованием браузера по умолчанию (открывание вкладок с web-страницей)
+import traceback  # вывод traceback без остановки работы программы при отлове исключений
+import json  # работа с json-файлами и json-строками
+import os  # работа с файловой системой
 
 
 class Translation:
@@ -33,6 +33,16 @@ class Translation:
             # в случае отсутствия перевода происходит вывод сообщения об этом в логах и возврат исходного текста
             print(colored("Not translated phrase: {}".format(text), "red"))
             return text
+
+
+class OwnerPerson:
+    """
+    Информация о владельце, включающие имя, город проживания, родной язык речи, изучаемый язык (для переводов текста)
+    """
+    name = ""
+    home_city = ""
+    native_language = ""
+    target_language = ""
 
 
 class VoiceAssistant:
@@ -144,21 +154,6 @@ def play_farewell_and_quit():
     quit()
 
 
-def toss_coin():
-    """
-    "Подбрасывание" монетки для выбора из 2 опций
-    """
-    flips_count, heads, tails = 3, 0, 0
-
-    for flip in range(flips_count):
-        if random.randint(0, 1) == 0:
-            heads += 1
-
-    tails = flips_count - heads
-    winner = "Tails" if tails > heads else "Heads"
-    play_voice_assistant_speech(translator.get(winner) + " " + translator.get("won"))
-
-
 def search_for_term_on_google(*args: tuple):
     """
     Поиск в Google с автоматическим открытием ссылок (на список результатов и на сами результаты, если возможно)
@@ -185,8 +180,8 @@ def search_for_term_on_google(*args: tuple):
                         ):
             search_results.append(_)
             webbrowser.get().open(_)
-    # поскольку все ошибки предсказать сложно, то будет произведен отлов с последующим выводом без остановки программы
 
+    # поскольку все ошибки предсказать сложно, то будет произведен отлов с последующим выводом без остановки программы
     except (ValueError, Exception):
         play_voice_assistant_speech(translator.get("Seems like we have a trouble. See logs for more information"))
         traceback.print_exc()
@@ -250,26 +245,61 @@ def change_language():
     """
     Изменение языка голосового ассистента (языка распознавания речи)
     """
-    assistant.speech_language = "ru" if assistant.speech_language == "en" else "en"
+    assistant.speech_language = "en" if assistant.speech_language == "ru" else "ru"
     setup_assistant_voice()
     print(colored("Language switched to " + assistant.speech_language, "cyan"))
 
 
+def toss_coin():
+    """
+    "Подбрасывание" монетки для выбора из 2 опций
+    """
+    flips_count, heads, tails = 3, 0, 0
+
+    for flip in range(flips_count):
+        if random.randint(0, 1) == 0:
+            heads += 1
+
+    tails = flips_count - heads
+    winner = "Tails" if tails > heads else "Heads"
+    play_voice_assistant_speech(translator.get(winner) + " " + translator.get("won"))
+
+
+# перечень команд для использования в виде JSON-объекта
 config = {
     "intents": {
         "greeting": {
-            "examples": ["привет", "здравствуй", "добрый день"],
+            "examples": ["привет", "здравствуй", "добрый день",
+                         "hello", "good morning"],
             "responses": play_greetings
         },
         "farewell": {
-            "examples": ["пока", "до свидания", "увидимся", "до встречи"],
+            "examples": ["пока", "до свидания", "увидимся", "до встречи",
+                         "goodbye", "bye", "see you soon"],
             "responses": play_farewell_and_quit
         },
         "google_search": {
-            "examples": ["найди в гугл"],
+            "examples": ["найди в гугл",
+                         "search on google", "google", "find on google"],
             "responses": search_for_term_on_google
         },
+        "translation": {
+            "examples": ["выполни перевод", "переведи", "найди перевод",
+                         "translate", "find translation"],
+            "responses": get_translation
+        },
+        "language": {
+            "examples": ["смени язык", "поменяй язык",
+                         "change speech language", "language"],
+            "responses": change_language
+        },
+        "toss_coin": {
+            "examples": ["подбрось монетку", "подкинь монетку",
+                         "toss coin", "coin", "flip a coin"],
+            "responses": toss_coin
+        }
     },
+
     "failure_phrases": play_failure_phrase
 }
 
@@ -323,14 +353,24 @@ def make_preparations():
     # инициализация инструмента синтеза речи
     ttsEngine = pyttsx3.init()
 
+    # настройка данных пользователя
+    person = OwnerPerson()
+    person.name = "Лена"
+    person.home_city = "Белгород"
+    person.native_language = "ru"
+    person.target_language = "en"
+
     # настройка данных голосового помощника
     assistant = VoiceAssistant()
-    assistant.name = "Ruble"
+    assistant.name = "Alice"
     assistant.sex = "male"
-    assistant.speech_language = "en"
+    assistant.speech_language = "ru"
 
     # установка голоса по умолчанию
     setup_assistant_voice()
+
+    # добавление возможностей перевода фраз (из заготовленного файла)
+    translator = Translation()
 
     # загрузка информации из .env-файла (там лежит API-ключ для OpenWeatherMap)
     load_dotenv()
@@ -377,5 +417,5 @@ if __name__ == "__main__":
                         print(command_options)
                         config["intents"][intent]["responses"](*command_options)
                         break
-                    if not intent and guess == len(voice_input_parts) - 1:
+                    if not intent and guess == len(voice_input_parts)-1:
                         config["failure_phrases"]()
