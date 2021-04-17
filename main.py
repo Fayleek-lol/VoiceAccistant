@@ -128,7 +128,7 @@ def play_farewell_and_quit():
     quit()
 
 
-def search_for_term_on_google(*args: tuple):
+def search_for_term_on_google():
 
     #if not args[0]:return
     search_term = " "#.join(args[0])
@@ -196,14 +196,14 @@ def get_translation(*args: tuple):
         setup_assistant_voice()
 
 
-def change_language():
+def change_language(*args: tuple):
 
     assistant.speech_language = "ru" if assistant.speech_language == "en" else "en"
     setup_assistant_voice()
     print(colored("Language switched to " + assistant.speech_language, "cyan"))
 
 
-def toss_coin():
+def toss_coin(*args: tuple):
 
     flips_count, heads, tails = 3, 0, 0
 
@@ -235,7 +235,8 @@ config = {
         },
         "translation": {
             "examples": ["выполни перевод", "переведи", "найди перевод",
-                         "translate", "find translation"],
+                         "translate", "find translation", "interpretation",
+                         "translation", "перевод", "перевести", "переведи"],
             "responses": get_translation
         },
         "language": {
@@ -319,8 +320,14 @@ def make_preparations():
 if __name__ == "__main__":
     make_preparations()
 
-    while True:
+    vectorizer = TfidfVectorizer(analyzer="char", ngram_range=(2, 3))
+    classifier_probability = LogisticRegression()
+    classifier = LinearSVC()
+    prepare_corpus()
 
+    while True:
+        # старт записи речи с последующим выводом распознанной речи
+        # и удалением записанного в микрофон аудио
         voice_input = record_and_recognize_audio()
 
         if os.path.exists("microphone-results.wav"):
@@ -328,9 +335,12 @@ if __name__ == "__main__":
 
         print(colored(voice_input, "blue"))
 
+        # отделение команд от дополнительной информации (аргументов)
         if voice_input:
             voice_input_parts = voice_input.split(" ")
 
+            # если было сказано одно слово - выполняем команду сразу
+            # без дополнительных аргументов
             if len(voice_input_parts) == 1:
                 intent = get_intent(voice_input)
                 if intent:
@@ -338,13 +348,14 @@ if __name__ == "__main__":
                 else:
                     config["failure_phrases"]()
 
+            # в случае длинной фразы - выполняется поиск ключевой фразы
+            # и аргументов через каждое слово,
+            # пока не будет найдено совпадение
             if len(voice_input_parts) > 1:
                 for guess in range(len(voice_input_parts)):
                     intent = get_intent((" ".join(voice_input_parts[0:guess])).strip())
-                    print(intent)
                     if intent:
                         command_options = [voice_input_parts[guess:len(voice_input_parts)]]
-                        print(command_options)
                         config["intents"][intent]["responses"](*command_options)
                         break
                     if not intent and guess == len(voice_input_parts) - 1:
